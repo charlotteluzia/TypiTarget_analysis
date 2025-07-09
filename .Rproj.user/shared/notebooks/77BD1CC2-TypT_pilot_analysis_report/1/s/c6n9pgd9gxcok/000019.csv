@@ -1,0 +1,20 @@
+"0","  # Loop through the files and read only the columns of interest.
+  for (file in logfile_list) {
+    
+    print(sprintf('Reading file: %s.', file))
+    
+    # Read the file
+    data <- read.csv(file, stringsAsFactors = FALSE)
+    data$p_typicality <- as.double(data$p_typicality)
+    # Append this dataset to the other datasets.
+    raw_data <- bind_rows(raw_data, data)
+  }
+"
+"1","[1]"
+"1"," ""Reading file: C:/Users/User/TypiTarget_analysis/data/TypT_full_ez.csv."""
+"1","
+"
+"1","[1]"
+"1"," ""Reading file: C:/Users/User/TypiTarget_analysis/data/TypT_full_tn.csv."""
+"1","
+"

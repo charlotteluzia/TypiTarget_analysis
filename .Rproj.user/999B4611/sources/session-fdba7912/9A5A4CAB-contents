@@ -1,0 +1,135 @@
+---
+title: "TypiTarget Analysis"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+
+library(pacman)
+p_load(knitr, dplyr, gsubfn, tidyr, ggplot2, ggpubr, afex, emmeans, purrr, cowplot, stringr, apa)
+
+dirs <- list()
+dirs$main <- "C:/Users/User/TypiTarget_analysis/"
+
+
+dirs$functions <- paste0(dirs$main, "functions/")
+dirs$analysis  <- paste0(dirs$main, "TypiTarget_analysis/code/")
+dirs$data      <- paste0(dirs$main, "data/")
+dirs$plots     <- paste0(dirs$main, "TypiTarget_analysis/plots/")
+
+logfile_list <- list.files(path = dirs$data, pattern = "\\.csv$", full.names = TRUE)
+ # Initialize an empty data frame
+raw_data <- data.frame()
+  
+  # Loop through the files and read only the columns of interest.
+  for (file in logfile_list) {
+    
+    print(sprintf('Reading file: %s.', file))
+    
+    # Read the file
+    data <- read.csv(file, stringsAsFactors = FALSE)
+    data$p_typicality <- as.double(data$p_typicality)
+    # Append this dataset to the other datasets.
+    raw_data <- bind_rows(raw_data, data)
+  }
+
+  
+raw_data <- raw_data %>%
+  mutate(participant = case_when(ImgDur == 0.5 ~ 1,
+                                 ImgDur == 0.7 ~ 2))
+
+vars                 <- list()
+vars$categories      <- c("bedroom", "kitchen", "living room")
+vars$cat_rt_min      <- 200 # consider only RTs faster than this.
+vars$cat_rt_max      <- 1500   # consider only RTs slower than this. 
+vars$cat_ntrials_min <- 10  # minimum number of trials; otherwise: bad
+vars$mem_dprime_min  <- -99 # -99 effectively means: any d' value counts 
+vars$mem_ntrials_min <- 10  # minimum number of trials; otherwise: bad
+
+
+# all_data <- read.csv(file = file.path(dirs$data, 
+#                      "TypT_full_ez.csv"), 
+#                         stringsAsFactors = FALSE)
+
+```
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+
+# ------------------------------------------------------------------------------
+# Preprocessing und data summary. We first process the data to flag bad
+# subjects. A subject is defined as "bad" if any of the following rules applies:
+# -   N trials in the categorization task is smaller than `r vars$cat_ntrials_min`
+# -   d' in the memory task is lower than `r vars$mem_dprime_min`
+# -   N trials in the memory task is smaller than `r vars$mem_ntrials_min`
+# ------------------------------------------------------------------------------
+source(file.path(dirs$functions, "fn_summarize_mem_accuracy.R"))
+
+prep_data <- raw_data %>%
+  mutate(
+    RT = RT * 1000
+  ) %>%
+  mutate(
+    category = str_replace_all(category, c("living_rooms"="living room", "kitchens"="kitchen", "bedrooms"="bedroom"))
+  )
+
+prep_data <- prep_data %>%
+  mutate(typicality = case_when(p_typicality == 0 ~ NA, 
+                                p_typicality <= 5 ~ "low", 
+                                p_typicality > 5 ~ "high",
+                                ))
+
+
+
+# ..............................................................................
+# MEMORY: accuracy and flag bad subjects.
+# ..............................................................................
+summary_mem_accuracy <- fn_summarize_mem_accuracy(prep_data, vars)
+
+
+# ..............................................................................
+# Merge all summaries.
+# ..............................................................................
+summary_all <- reduce(list(summary_mem_accuracy), full_join, by = c("participant", "typicality", "category"))
+
+
+
+```
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+## memory performance
+
+anova_mem_acc <- aov_ez(id="participant", dv="mem_dprime", summary_all, within = c("typicality", "category"), between = "ImgDur")
+nice(anova_mem_acc, es = "pes", "correction" = "GG")
+anova_apa(anova_mem_acc, es=c("petasq"), sph_corr=c("greenhouse-geisser"))
+plot <- ggplot(summary_mem_accuracy) + aes(x=typicality, y=mem_dprime, colour = as.factor(ImgDur)) + geom_point()
+# plot <- ggplot(summary_all) + aes(fill=ImgDur, y=mem_dprime, x=typicality) + 
+  #  geom_violin(position="dodge", alpha=0.5)
+print(plot)
+```
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+
+# ..............................................................................
+# isolation spread effect
+# compute position of images before and after targets or nontargets
+# do we see an effect of this position in such a way that images in this position are remembered better?
+# ..............................................................................
+
+# filter for task oddball, and filter for images in categories
+# 
+
+prep_data <- prep_data %>%
+  filter(task == "oddball") %>%
+  
+
+
+```
