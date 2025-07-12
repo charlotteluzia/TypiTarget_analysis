@@ -26,26 +26,26 @@ dirs$analysis  <- paste0(dirs$main, "TypiTarget_analysis/code/")
 dirs$data      <- paste0(dirs$main, "data/")
 dirs$plots     <- paste0(dirs$main, "TypiTarget_analysis/plots/")
 
-logfile_list <- list.files(path = dirs$data, pattern = "\\.csv$", full.names = TRUE)
- # Initialize an empty data frame
-raw_data <- data.frame()
-  
-  # Loop through the files and read only the columns of interest.
-  for (file in logfile_list) {
-    
-    print(sprintf('Reading file: %s.', file))
-    
-    # Read the file
-    data <- read.csv(file, stringsAsFactors = FALSE)
-    data$p_typicality <- as.double(data$p_typicality)
-    # Append this dataset to the other datasets.
-    raw_data <- bind_rows(raw_data, data)
-  }
-
-  
-raw_data <- raw_data %>%
-  mutate(participant = case_when(ImgDur == 0.5 ~ 1,
-                                 ImgDur == 0.7 ~ 2))
+# logfile_list <- list.files(path = dirs$data, pattern = "\\.csv$", full.names = TRUE)
+#  # Initialize an empty data frame
+# raw_data <- data.frame()
+#   
+#   # Loop through the files and read only the columns of interest.
+#   for (file in logfile_list) {
+#     
+#     print(sprintf('Reading file: %s.', file))
+#     
+#     # Read the file
+#     data <- read.csv(file, stringsAsFactors = FALSE)
+#     data$p_typicality <- as.double(data$p_typicality)
+#     # Append this dataset to the other datasets.
+#     raw_data <- bind_rows(raw_data, data)
+#   }
+# 
+#   
+# raw_data <- raw_data %>%
+#   mutate(participant = case_when(ImgDur == 0.5 ~ 1,
+#                                  ImgDur == 0.7 ~ 2))
 
 vars                 <- list()
 vars$categories      <- c("bedroom", "kitchen", "living room")
@@ -56,9 +56,12 @@ vars$mem_dprime_min  <- -99 # -99 effectively means: any d' value counts
 vars$mem_ntrials_min <- 10  # minimum number of trials; otherwise: bad
 
 
-# all_data <- read.csv(file = file.path(dirs$data, 
-#                      "TypT_full_ez.csv"), 
-#                         stringsAsFactors = FALSE)
+all_data <- read.csv(file = file.path(dirs$data,
+                     "TypT_full_tn.csv"),
+                        stringsAsFactors = FALSE)
+# all_data <- read.csv(file = file.path(dirs$data,
+#                      "TypT_full_testText.csv"),
+#                       stringsAsFactors = FALSE)
 
 ```
 
@@ -101,7 +104,7 @@ summary_mem_accuracy <- fn_summarize_mem_accuracy(prep_data, vars)
 summary_all <- reduce(list(summary_mem_accuracy), full_join, by = c("participant", "typicality", "category"))
 
 
-
+prep_data %>% filter(category=="target") %>% filter(target_resp==1) %>% summarize(mean_RT = mean(RT))
 ```
 
 ```{r echo=FALSE, message=TRUE, warning=TRUE}
@@ -125,11 +128,9 @@ print(plot)
 # ..............................................................................
 
 # filter for task oddball, and filter for images in categories
-# 
+# divide in images of desired position and all others to compare memory d'
+source(file.path(dirs$functions, "fn_isolation_spread.R"))
 
-prep_data <- prep_data %>%
-  filter(task == "oddball") %>%
-  
-
+summary_isolation_spread <- fn_isolation_spread(prep_data, vars)
 
 ```
