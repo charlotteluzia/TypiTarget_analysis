@@ -49,18 +49,18 @@ dirs$plots     <- paste0(dirs$main, "TypiTarget_analysis/plots/")
 
 vars                 <- list()
 vars$categories      <- c("bedroom", "kitchen", "living room")
-vars$cat_rt_min      <- 200 # consider only RTs faster than this.
-vars$cat_rt_max      <- 1500   # consider only RTs slower than this. 
+vars$odd_rt_min      <- 200 # consider only RTs faster than this.
+vars$odd_rt_max      <- 2000   # consider only RTs slower than this. 
 vars$cat_ntrials_min <- 10  # minimum number of trials; otherwise: bad
 vars$mem_dprime_min  <- -99 # -99 effectively means: any d' value counts 
 vars$mem_ntrials_min <- 10  # minimum number of trials; otherwise: bad
 
 
 #all_data <- read.csv(file = file.path(dirs$data,
-                     "TypT_full_tn.csv"),
-                        stringsAsFactors = FALSE)
+ #                    "TypT_full_tn.csv"),
+  #                      stringsAsFactors = FALSE)
  all_data <- read.csv(file = file.path(dirs$data,
-                      "TypT_full_testText.csv"),
+                      "TypT_full_3.csv"),
                        stringsAsFactors = FALSE)
 
 ```
@@ -75,6 +75,7 @@ vars$mem_ntrials_min <- 10  # minimum number of trials; otherwise: bad
 # -   N trials in the memory task is smaller than `r vars$mem_ntrials_min`
 # ------------------------------------------------------------------------------
 source(file.path(dirs$functions, "fn_summarize_mem_accuracy.R"))
+source(file.path(dirs$functions, "fn_target_RT.R"))
 
 prep_data <- all_data %>%
   mutate(
@@ -105,27 +106,28 @@ summary_all <- reduce(list(summary_mem_accuracy), full_join, by = c("participant
 
 plot_mem_accuracy <- ggplot(summary_mem_accuracy) + aes(x=typicality, y=mem_dprime, colour = as.factor(ImgDur)) + geom_point()
 print(plot_mem_accuracy)
+ 
 
-mean_RT    <- prep_data %>% filter(category=="target") %>% filter(target_resp==1) %>%   
-                summarize(mean_RT = mean(RT))
-RT_targets <- prep_data %>% filter(category=="target") %>% filter(target_resp==1)
-plot_RT_targets <- ggplot(RT_targets, aes(x=RT)) + geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)
-print(plot_RT_targets)
-plot_RT_targets_scatter <- ggplot(RT_targets, aes(x=RT, y=)) + geom_histogram(binwidth = 20, fill = "skyblue", color = "black")
-print(plot_RT_targets_scatter)
+
 ```
 
 ```{r echo=FALSE, message=TRUE, warning=TRUE}
-## memory performance
 
-anova_mem_acc <- aov_ez(id="participant", dv="mem_dprime", summary_all, within = c("typicality", "category"), between = "ImgDur")
-nice(anova_mem_acc, es = "pes", "correction" = "GG")
-anova_apa(anova_mem_acc, es=c("petasq"), sph_corr=c("greenhouse-geisser"))
-plot <- ggplot(summary_mem_accuracy) + aes(x=typicality, y=mem_dprime, colour = as.factor(ImgDur)) + geom_point()
-# plot <- ggplot(summary_all) + aes(fill=ImgDur, y=mem_dprime, x=typicality) + 
-  #  geom_violin(position="dodge", alpha=0.5)
-print(plot)
+# ..............................................................................
+# Plot response times of targets
+# ..............................................................................
+
+summary_target_RT <- prep_data %>% 
+    filter(category=="target") %>% filter(target_resp==1)
+
+plot_RT_targets_hist <- ggplot(summary_target_RT, aes(x=RT)) + geom_histogram(binwidth = 20, fill = "skyblue", color = "black")
+print(plot_RT_targets_hist)
+
+# plot_RT_targets <- ggplot(RT_targets, aes(x=RT)) + geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+# print(plot_RT_targets)
+
 ```
+
 
 ```{r echo=FALSE, message=TRUE, warning=TRUE}
 
@@ -143,4 +145,16 @@ summary_isolation_spread <- fn_isolation_spread(prep_data, vars)
 plot_iso_spread <- ggplot(summary_isolation_spread) + aes(x=typicality, y=mem_dprime, colour = as.factor(iso_spread)) + geom_point()
 print(plot_iso_spread)
 
+```
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+## memory performance
+
+anova_mem_acc <- aov_ez(id="participant", dv="mem_dprime", summary_all, within = c("typicality", "category"), between = "ImgDur")
+nice(anova_mem_acc, es = "pes", "correction" = "GG")
+anova_apa(anova_mem_acc, es=c("petasq"), sph_corr=c("greenhouse-geisser"))
+plot <- ggplot(summary_mem_accuracy) + aes(x=typicality, y=mem_dprime, colour = as.factor(ImgDur)) + geom_point()
+# plot <- ggplot(summary_all) + aes(fill=ImgDur, y=mem_dprime, x=typicality) + 
+  #  geom_violin(position="dodge", alpha=0.5)
+print(plot)
 ```
