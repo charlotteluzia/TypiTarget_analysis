@@ -60,7 +60,7 @@ vars$mem_ntrials_min <- 10  # minimum number of trials; otherwise: bad
  #                    "TypT_full_tn.csv"),
   #                      stringsAsFactors = FALSE)
  all_data <- read.csv(file = file.path(dirs$data,
-                      "TypT_full_3.csv"),
+                      "TypT_full_4.csv"),
                        stringsAsFactors = FALSE)
 
 ```
